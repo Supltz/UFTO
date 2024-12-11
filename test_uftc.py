@@ -24,34 +24,7 @@ parser.add_argument('--attribute', required=True, type=str, help='Attribute mode
 parser.add_argument('--eva_metric', required=True, type=str, choices=['dp', 'eo', 'eod'], help='Fairness evaluation metric')
 args = parser.parse_args()
 
-class SwinWithPenultimate(nn.Module):
-    def __init__(self, base_model, num_classes):
-        super(SwinWithPenultimate, self).__init__()
-        self.base_model = base_model
-        # Replace the final fully connected layer to match the number of classes for FER/AU classification
-        self.base_model.fc = nn.Linear(self.base_model.fc.in_features, num_classes)
 
-    def forward(self, x):
-        # Pass through all the layers except the final fc layer
-        x = self.base_model.conv1(x)
-        x = self.base_model.bn1(x)
-        x = self.base_model.relu(x)
-        x = self.base_model.maxpool(x)
-
-        x = self.base_model.layer1(x)
-        x = self.base_model.layer2(x)
-        x = self.base_model.layer3(x)
-        x = self.base_model.layer4(x)
-
-        # Extract the penultimate layer (output of avgpool)
-        x = self.base_model.avgpool(x)
-        penultimate_layer = torch.flatten(x, 1)
-
-        # Final output (for emotion classification)
-        final_output = self.base_model.fc(penultimate_layer)
-
-        return final_output, penultimate_layer
-    
 
 def freeze_model_layers(model):
     for param in model.parameters():
