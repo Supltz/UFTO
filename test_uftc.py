@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 import argparse
 import warnings
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.resnets import resnet34
+from models import Swin
 from expression_datasets import *
 from data_prep import RAF_spliting, split_dataset, AU_split
 from fairness_criterion import calculate_dp, calculate_eo, calculate_eod
@@ -24,9 +24,9 @@ parser.add_argument('--attribute', required=True, type=str, help='Attribute mode
 parser.add_argument('--eva_metric', required=True, type=str, choices=['dp', 'eo', 'eod'], help='Fairness evaluation metric')
 args = parser.parse_args()
 
-class ResNetWithPenultimate(nn.Module):
+class SwinWithPenultimate(nn.Module):
     def __init__(self, base_model, num_classes):
-        super(ResNetWithPenultimate, self).__init__()
+        super(SwinWithPenultimate, self).__init__()
         self.base_model = base_model
         # Replace the final fully connected layer to match the number of classes for FER/AU classification
         self.base_model.fc = nn.Linear(self.base_model.fc.in_features, num_classes)
@@ -125,8 +125,8 @@ def main():
         num_classes = 13 if args.dataset == "AU" else 11
 
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-    base_resnet34 = resnet34(pretrained=False)
-    model = ResNetWithPenultimate(base_model=base_resnet34, num_classes=num_classes).to(device)
+    base_Swin = Swin(pretrained=False)
+    model = SwinWithPenultimate(base_model=base_Swin, num_classes=num_classes).to(device)
 
 
 

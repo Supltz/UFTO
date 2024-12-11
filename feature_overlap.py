@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from captum.attr import LayerGradCam
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.resnets import *
+from models import *
 from data_prep import RAF_spliting
 from expression_datasets import RAFDataset
 
@@ -144,12 +144,12 @@ def main():
     # Load the models
     emotion_model_list = []
     for i in range(len(pth_files)):
-        emotion_model = resnet34(pretrained=False, num_classes=7)
+        emotion_model = Swin(pretrained=False, num_classes=7)
         emotion_model_list.append(emotion_model)
     
-    gender_model = resnet34(pretrained=False, num_classes=2)
-    race_model = resnet34(pretrained=False, num_classes=3)
-    age_model = resnet34(pretrained=False, num_classes=5)
+    gender_model = Swin(pretrained=False, num_classes=2)
+    race_model = Swin(pretrained=False, num_classes=3)
+    age_model = Swin(pretrained=False, num_classes=5)
     load_model_weights(gender_model, f'./Feature_Entangle/checkpoints/best_model_RAF_gender.pth')
     load_model_weights(race_model, f'./Feature_Entangle/checkpoints/best_model_RAF_race.pth')
     load_model_weights(age_model, f'./Feature_Entangle/checkpoints/best_model_RAF_age.pth')

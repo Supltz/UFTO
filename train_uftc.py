@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 import argparse
 import warnings
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.resnets import resnet34
+from models import Swin
 from expression_datasets import *
 from data_prep import RAF_spliting, split_dataset, AU_split
 from dependence_metric import hsic, MINE, mine_loss, distance_correlation  # Dependence metric import
@@ -26,38 +26,12 @@ parser.add_argument('--metric', required=True, type=str, choices=['hsic', 'mine'
 parser.add_argument('--eva_metric', required=True, type=str, choices=['dp', 'eo', 'eod'], help='Fairness evaluation metric')
 args = parser.parse_args()
 
-class ResNetWithPenultimate(nn.Module):
-    def __init__(self, base_model, num_classes):
-        super(ResNetWithPenultimate, self).__init__()
-        self.base_model = base_model
-        # Replace the final fully connected layer to match the number of classes for FER/AU classification
-        self.base_model.fc = nn.Linear(self.base_model.fc.in_features, num_classes)
 
-    def forward(self, x):
-        # Pass through all the layers except the final fc layer
-        x = self.base_model.conv1(x)
-        x = self.base_model.bn1(x)
-        x = self.base_model.relu(x)
-        x = self.base_model.maxpool(x)
 
-        x = self.base_model.layer1(x)
-        x = self.base_model.layer2(x)
-        x = self.base_model.layer3(x)
-        x = self.base_model.layer4(x)
-
-        # Extract the penultimate layer (output of avgpool)
-        x = self.base_model.avgpool(x)
-        penultimate_layer = torch.flatten(x, 1)
-
-        # Final output (for emotion classification)
-        final_output = self.base_model.fc(penultimate_layer)
-
-        return final_output, penultimate_layer
-
-# Load pre-trained attribute model (ResNet34 for race, gender, age)
+# Load pre-trained attribute model (Swin for race, gender, age)
 def load_attribute_model(dataset, attribute, device):
     model_path = f'./Feature_Entangle/checkpoints/best_model_{dataset}_{attribute}.pth'  # Dataset and attribute-specific path
-    model = resnet34(pretrained=False)
+    model = Swin(pretrained=False)
     model.fc = nn.Identity()  # Remove final classification layer
     model.load_state_dict(torch.load(model_path), strict=False)
     model = model.to(device)
@@ -265,8 +239,8 @@ def main():
     for lambda_1 in [round(x * 0.01, 1) for x in range(-10, 10)]:
         print(f'Running ({args.dataset}, {args.attribute}) for lambda_1: {lambda_1} and {args.metric}')
         writer = SummaryWriter(f'./Trade_Off/runs/{args.dataset}_{args.attribute}_{args.metric}_{args.eva_metric}_{lambda_1}')
-        base_resnet34 = resnet34(pretrained=False)
-        model = ResNetWithPenultimate(base_model=base_resnet34, num_classes=num_classes).to(device)
+        base_Swin = Swin(pretrained=False)
+        model = SwinWithPenultimate(base_model=base_Swin, num_classes=num_classes).to(device)
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
         best_model_state = None
